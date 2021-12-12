@@ -2,6 +2,7 @@ const val white = 1
 const val black = 2
 var next = 1
 fun main() {
+    println("歡迎使用黑白棋系統")
     val cb = Array(8) { IntArray(8) }
     cb[3][3] = 1
     cb[4][4] = 1
