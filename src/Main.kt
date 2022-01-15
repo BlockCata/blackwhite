@@ -1,385 +1,149 @@
-const val white = 1
-const val black = 2
-var next = 1
-fun main() {
-    println("歡迎使用黑白棋系統")
-    val cb = Array(8) { IntArray(8) }
-    cb[3][3] = 1
-    cb[4][4] = 1
-    cb[4][3] = 2
-    cb[3][4] = 2
-    grid(cb)
+import java.awt.*
+import java.awt.event.ActionListener
+import javax.swing.*
 
-    while (gameOvercheck(cb)) {
-        println("請輸入落子位置: ")
-        val input = readLine()!!.split(" ")
-        val x = input[0].toInt() - 1
-        val y = input[1].toInt() - 1
+class testUI : JFrame() {
 
-        if (cb[y][x] == 0) {
-            if (allCheck(
-                    leftCheck(cb, x, y, next), rightCheck(cb, x, y, next), upCheck(cb, x, y, next),
-                    downCheck(cb, x, y, next), leftupCheck(cb, x, y, next), rightupCheck(cb, x, y, next),
-                    leftdownCheck(cb, x, y, next), rightdownCheck(cb, x, y, next), cb, x, y
-                )
-            ) {
-                cb[y][x] = next
-                if (next == 1) {
-                    next = 2
-                    println("換黑子")
-                } else {
-                    next = 1
-                    println("換白子")
+    fun showFrame() {
+        //---------遊戲介面
+        val uiJp = JPanel()
+        //------------組件介面
+        val buttonJp = JPanel()
+        //---按鈕,按鈕文字
+        val blackBotton = JButton("黑棋")
+        val whiteBotton = JButton("白棋")
+        //------按鈕大小
+        whiteBotton.preferredSize = Dimension(100, 100)
+        blackBotton.preferredSize = Dimension(100, 100)
+
+        val label = JLabel("黑棋下")
+        label.font = Font("", Font.BOLD, 35)
+
+        val blackConut = JLabel("2")
+        val whiteConut = JLabel("2")
+
+        blackConut.font = Font("", Font.BOLD, 40)
+        whiteConut.font = Font("", Font.BOLD, 40)
+
+        //---重置按鈕
+        val restartBu = JButton("restart")
+        restartBu.preferredSize = Dimension(100, 40)
+        buttonJp.add(label)
+        buttonJp.add(blackBotton)
+        buttonJp.add(blackConut)
+        buttonJp.add(whiteBotton)
+        buttonJp.add(whiteConut)
+        buttonJp.add(restartBu)
+        layout = GridLayout(1, 2, 600, 0)
+        add(uiJp)
+        add(buttonJp)
+        setSize(1000, 800)
+        setLocationRelativeTo(null)
+        title = "黑白棋程式"
+        this.isVisible = true
+
+        //-----畫布權限
+
+        grid[2][2] = 1
+        grid[3][3] = 1
+        grid[2][3] = 2
+        grid[3][2] = 2
+
+        addMouseListener(gridListener(graphics, this, label, blackConut, whiteConut))
+
+        val buttonLis = ActionListener {
+            clear()
+            repaint()
+            grid[2][2] = 1
+            grid[3][3] = 1
+            grid[2][3] = 2
+            grid[3][2] = 2
+
+            gridListener.stata = 1
+
+            label.text = "黑棋下"
+            blackConut.text = "2"
+            whiteConut.text = "2"
+        }
+        val blackLis = ActionListener {
+            gridListener.stata = 1
+            label.text = "黑棋下"
+        }
+        val whiteLis = ActionListener {
+            gridListener.stata = 2
+            label.text = "白棋下"
+        }
+        blackBotton.addActionListener(blackLis)
+        whiteBotton.addActionListener(whiteLis)
+        restartBu.addActionListener(buttonLis)
+        defaultCloseOperation = 3
+    }
+
+    fun clear() {
+        for (i in grid.indices) {
+            for (j in grid[i].indices) {
+                grid[i][j] = 0
+            }
+        }
+    }
+
+    override fun paint(g: Graphics) {
+        super.paint(g)
+
+        // 橫線
+        for (i in 0..rows - 1) {
+            g.color = Color.DARK_GRAY
+            g.drawLine(
+                gridx,
+                gridy + i * Companion.size,
+                gridx + Companion.size * (rows - 1),
+                gridy + i * Companion.size
+            )
+        }
+
+        // 垂直線
+        for (i in 0..cols - 1) {
+            g.color = Color.DARK_GRAY
+            g.drawLine(
+                gridx + i * Companion.size,
+                gridy,
+                gridx + i * Companion.size,
+                gridy + Companion.size * (cols - 1)
+            )
+
+        }
+
+        // 畫棋子
+        for (i in 0 until rows - 1) {
+            for (j in 0 until cols - 1) {
+                val X = Companion.gridx + Companion.size / 2 + Companion.size * i
+                val Y = Companion.gridy + Companion.size / 2 + Companion.size * j
+
+                if (grid[i][j] == 1) {
+                    g.color = Color.BLACK
+                    g.fillOval(X - point_size / 2, Y - point_size / 2, point_size, point_size)
+                } else if (grid[i][j] == 2) {
+                    g.color = Color.WHITE
+                    g.fillOval(X - point_size / 2, Y - point_size / 2, point_size, point_size)
                 }
             }
-        } else println("你不能在此落子")
-        grid(cb)
-    }
-    println("遊戲結束")
-}
-
-fun grid(g: Array<IntArray>) {
-    var num = 1
-    println("  1 2 3 4 5 6 7 8")
-    for (list in g) {
-        print("$num ")
-        for (point in list) {
-            print(point)
-            print(" ")
         }
-        num++
-        println(" ")
     }
-}
 
-fun leftCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _x = x - 1
-    while (_x >= 0) {
-        val point = grid[y][_x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            testUI().showFrame()
+            EventQueue.invokeLater(::testUI)
         }
-        _x--
+        const val gridx = 100 //棋盤初始點橫坐標
+        const val gridy = 100 //棋盤初始點縱坐標
+        const val rows = 7 //棋盤行數
+        const val cols = 7 //棋盤列數
+        const val size = 100 //棋盤格子大小
+        const val point_size = 95 //棋子大小
+        val grid = Array(rows - 1) { IntArray(cols - 1) } //定義一個6*6的數組，用來保存棋子
     }
-    if (d && s) for (newnext in _x..x) {
-        grid[y][newnext] = next
-        allCheck(
-            leftCheck(grid, newnext, y, next),
-            rightCheck(grid, newnext, y, next),
-            upCheck(grid, newnext, y, next),
-            downCheck(grid, newnext, y, next),
-            leftupCheck(grid, newnext, y, next),
-            rightupCheck(grid, newnext, y, next),
-            leftdownCheck(grid, newnext, y, next),
-            rightdownCheck(grid, newnext, y, next),
-            grid,
-            newnext,
-            y
-        )
-    }
-    return d && s
-}
-
-fun rightCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _x = x + 1
-    while (_x <= 7) {
-        val point = grid[y][_x]
-
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _x++
-    }
-    if (d && s) for (newnext in x.._x) {
-        grid[y][newnext] = next
-        allCheck(
-            leftCheck(grid, newnext, y, next),
-            rightCheck(grid, newnext, y, next),
-            upCheck(grid, newnext, y, next),
-            downCheck(grid, newnext, y, next),
-            leftupCheck(grid, newnext, y, next),
-            rightupCheck(grid, newnext, y, next),
-            leftdownCheck(grid, newnext, y, next),
-            rightdownCheck(grid, newnext, y, next),
-            grid,
-            newnext,
-            y
-        )
-    }
-    return d && s
-}
-
-fun upCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _y = y - 1
-    while (_y >= 0) {
-//        println("檢查 ${x + 1} ${_y + 1} 現在是 ${grid[_y][x]}")
-        val point = grid[_y][x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _y--
-    }
-    if (d && s) for (newnext in _y..y) {
-        grid[newnext][x] = next
-        allCheck(
-            leftCheck(grid, x, newnext, next),
-            rightCheck(grid, x, newnext, next),
-            upCheck(grid, x, newnext, next),
-            downCheck(grid, x, newnext, next),
-            leftupCheck(grid, x, newnext, next),
-            rightupCheck(grid, x, newnext, next),
-            leftdownCheck(grid, x, newnext, next),
-            rightdownCheck(grid, x, newnext, next),
-            grid,
-            x,
-            newnext
-        )
-    }
-    return d && s
-}
-
-fun downCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _y = y + 1
-    while (_y <= 7) {
-        val point = grid[_y][x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _y++
-    }
-    if (d && s) for (newnext in y.._y) {
-        grid[newnext][x] = next
-        allCheck(
-            leftCheck(grid, x, newnext, next),
-            rightCheck(grid, x, newnext, next),
-            upCheck(grid, x, newnext, next),
-            downCheck(grid, x, newnext, next),
-            leftupCheck(grid, x, newnext, next),
-            rightupCheck(grid, x, newnext, next),
-            leftdownCheck(grid, x, newnext, next),
-            rightdownCheck(grid, x, newnext, next),
-            grid,
-            x,
-            newnext
-        )
-    }
-    return d && s
-}
-
-fun leftupCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _x = x - 1
-    var _y = y - 1
-    while (_y >= 0 && _x >= 0) {
-        val point = grid[_y][_x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _y--
-        _x--
-    }
-    var newX = x - 1
-    var newY = y - 1
-    if (d && s) while (newY >= _y || newX >= _x) {
-        grid[newY][newX] = next
-        allCheck(
-            leftCheck(grid, newX, newY, next),
-            rightCheck(grid, newX, newY, next),
-            upCheck(grid, newX, newY, next),
-            downCheck(grid, newX, newY, next),
-            leftupCheck(grid, newX, newY, next),
-            rightupCheck(grid, newX, newY, next),
-            leftdownCheck(grid, newX, newY, next),
-            rightdownCheck(grid, newX, newY, next),
-            grid,
-            newX,
-            newY
-        )
-        newY--
-        newX--
-    }
-    return d && s
-}
-
-fun rightupCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _x = x + 1
-    var _y = y - 1
-    while (_y >= 0 && _x <= 7) {
-        val point = grid[_y][_x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _y--
-        _x++
-    }
-    var newX = x + 1
-    var newY = y - 1
-    if (d && s) while (newY >= _y || newX <= _x) {
-        grid[newY][newX] = next
-        allCheck(
-            leftCheck(grid, newX, newY, next),
-            rightCheck(grid, newX, newY, next),
-            upCheck(grid, newX, newY, next),
-            downCheck(grid, newX, newY, next),
-            leftupCheck(grid, newX, newY, next),
-            rightupCheck(grid, newX, newY, next),
-            leftdownCheck(grid, newX, newY, next),
-            rightdownCheck(grid, newX, newY, next),
-            grid,
-            newX,
-            newY
-        )
-        newY--
-        newX++
-    }
-    return d && s
-}
-
-fun leftdownCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _x = x - 1
-    var _y = y + 1
-    while (_y <= 7 && _x >= 0) {
-        val point = grid[_y][_x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _y++
-        _x--
-    }
-    var newX = x - 1
-    var newY = y + 1
-    if (d && s) while (newY <= _y || newX >= _x) {
-        grid[newY][newX] = next
-        allCheck(
-            leftCheck(grid, newX, newY, next),
-            rightCheck(grid, newX, newY, next),
-            upCheck(grid, newX, newY, next),
-            downCheck(grid, newX, newY, next),
-            leftupCheck(grid, newX, newY, next),
-            rightupCheck(grid, newX, newY, next),
-            leftdownCheck(grid, newX, newY, next),
-            rightdownCheck(grid, newX, newY, next),
-            grid,
-            newX,
-            newY
-        )
-        newY++
-        newX--
-    }
-    return d && s
-}
-
-fun rightdownCheck(grid: Array<IntArray>, x: Int, y: Int, next: Int): Boolean {
-//    if (grid[y][x] != 0) return false
-    var d = false
-    var s = false
-    var _x = x + 1
-    var _y = y + 1
-    while (_y <= 7 && _x <= 7) {
-        println("檢查 ${_x - 1} ${_y - 1} 現在是 ${grid[_y][_x]}")
-        val point = grid[_y][_x]
-        if (point == next) {
-            s = true
-            break
-        } else if (point == 0) break
-        else {
-            d = true
-        }
-        _y++
-        _x++
-    }
-    var newX = x + 1
-    var newY = y + 1
-    if (d && s) while (newY <= _y || newX <= _x) {
-        grid[newY][newX] = next
-        allCheck(
-            leftCheck(grid, newX, newY, next),
-            rightCheck(grid, newX, newY, next),
-            upCheck(grid, newX, newY, next),
-            downCheck(grid, newX, newY, next),
-            leftupCheck(grid, newX, newY, next),
-            rightupCheck(grid, newX, newY, next),
-            leftdownCheck(grid, newX, newY, next),
-            rightdownCheck(grid, newX, newY, next),
-            grid,
-            newX,
-            newY
-        )
-        newY++
-        newX++
-    }
-    return d && s
 }
 
 
-fun allCheck(
-    l: Boolean, r: Boolean, u: Boolean, d: Boolean, lu: Boolean, ru: Boolean, ld: Boolean, rd: Boolean,
-    grid: Array<IntArray>, x: Int, y: Int
-): Boolean {
-    println("${x + 1} ${y + 1} 現在是${grid[y][x]}")
-    while (l || r || u || d || lu || ru || ld || rd) {
-        println("可以落子")
-        println("l:$l,r:$r,u:$u,d:$d,lu:$lu,ru:$ru,ld:$ld,rd:$rd")
-        println("現在是${grid[y][x]} 要改成$next")
-        return true
-    }
-    println("無法落子")
-    println("l:$l,r:$r,u:$u,d:$d,lu:$lu,ru:$ru,ld:$ld,rd:$rd")
-    return false
-}
-
-// 如果gameOvercheck = true 就結束
-fun gameOvercheck(grid: Array<IntArray>): Boolean {
-    for (list in grid)
-        for (point in list)
-            if (point == 0) return true
-    return false
-}
